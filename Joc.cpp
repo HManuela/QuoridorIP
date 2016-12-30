@@ -4,8 +4,10 @@
 
 Joc::Joc()
 {
-	jx = 4;
-	jy = 1;
+	nrjucatori = 2;
+	tura = 0;
+	jucatori[0] = new Jucator(Jucator::S, Jucator::G);
+	jucatori[1] = new Jucator(Jucator::N, Jucator::M);
 	tabla = al_load_bitmap("tabla.png");
 	display = al_create_display(WIDTH, HEIGHT);
 	pioni = al_load_bitmap("pioni.png");
@@ -169,6 +171,9 @@ char Joc::Input()
 void Joc::Logic()
 {
 	int i;
+	int jx, jy;
+	jx = jucatori[tura]->x;
+	jy = jucatori[tura]->y;
 	if (input.tip == CASUTA)
 	{
 		for (i = 0; i < 4; i++)
@@ -204,13 +209,17 @@ void Joc::Logic()
 					matrice_pereti[2 * input.x+3][2 * input.y] = M_PERETE;
 				}
 				nrpereti++;
+				tura = (tura + 1) % nrjucatori;
 			}
 		if (input.tip == CASUTA)
 		{
 				if (input.specific)
 				{
-					jx = input.x;
-					jy = input.y;
+					jucatori[tura]->x = input.x;
+					jucatori[tura]->y = input.y;
+
+					tura = (tura + 1) % nrjucatori;
+					input.specific = 0;
 				}
 
 		}
@@ -222,18 +231,36 @@ void Joc::Logic()
 void Joc::Draw()
 {
 	int i;
-	DeseneazaTabla();
-	DeseneazaPion(jx, jy, 1);
 	
+	DeseneazaTabla();
+
+	for (i = 0; i < nrjucatori; i++)
+	{
+		int jx, jy;
+		jx = jucatori[i]->x;
+		jy = jucatori[i]->y;
+		DeseneazaPion(jx, jy, jucatori[i]->pion);
+	}
 	for (i = 0; i < nrpereti; i++)
 		DeseneazaPerete(pereti[i].x, pereti[i].y, pereti[i].orientare, 1);
-	
+
 	if (input.tip == PERETE)
 		DeseneazaPerete(input.x, input.y, input.specific, 0);
 	else
-		if(!(input.x==jx &&input.y==jy))
+	{
+		bool suprapunere = 0;
+		for (i = 0; i < nrjucatori; i++)
+		{
+			int jx, jy;
+			jx = jucatori[i]->x;
+			jy = jucatori[i]->y;
+			if ((input.x == jx && input.y == jy))
+				suprapunere = 1;
+		}
+
+		if (!suprapunere)
 			DeseneazaCasuta(input.x, input.y, input.specific);
-	
+	}
 
 	Arata();
 }

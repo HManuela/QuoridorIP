@@ -1,5 +1,5 @@
 #pragma once
-
+#include "Jucator.h"
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_image.h>
 #include <allegro5/allegro_primitives.h>
@@ -20,7 +20,9 @@ private:
 	bool gameOver;
 	ALLEGRO_EVENT_QUEUE *event_queue;
 	ALLEGRO_TIMER * timer;
-	int jx, jy;
+	int tura;
+	Jucator* jucatori[4];
+	int nrjucatori;
 	enum {
 		PERETE, CASUTA
 	};
