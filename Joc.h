@@ -27,6 +27,9 @@ private:
 	enum {
 		VERTICAL, ORIZONTAL
 	};
+	enum {
+		M_LIBER, M_PERETE, M_JUCATOR
+	};
 	struct InputJucator {
 		int x, y;
 		int specific;
@@ -42,6 +45,7 @@ private:
 	int nrpereti;
 	perete pereti[20];
 	bool  doaction;
+	int matrice_pereti[20][20];
 
 public:
 	Joc();

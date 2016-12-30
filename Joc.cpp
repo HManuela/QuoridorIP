@@ -50,16 +50,12 @@ void Joc::DeseneazaTabla()
 }
 
 
-/*
-1 pentru orizontal
-0 pentru vertical
-*/
 void Joc::DeseneazaPerete(int x, int y, int orientare, int permanent)
 {
 	if (x == -1 && y == -1) return;
 	if ( orientare==ORIZONTAL && x >= 8) x = 7;
 	if (orientare==VERTICAL && y >= 8) y = 7;
-	cout << "desenez" << orientare;
+	//cout << "desenez" << orientare;
 	x = (DIM_P+DIM_SP)*x + DIM_SP*orientare;
 	y = (DIM_P+DIM_SP)*y + DIM_SP*(1 - orientare);
 	if (!permanent)
@@ -128,8 +124,9 @@ char Joc::Input()
 				//cout << (mx - DIM_SP) / (DIM_P + DIM_SP) << ' ' << (my - DIM_SP) / (DIM_P + DIM_SP) << '\n';
 				input.x = c1x / (DIM_P + DIM_SP);
 				input.y = c1y / (DIM_P + DIM_SP);
-				//input.specific = 0;
+				input.specific = 0;
 				input.tip = CASUTA;
+				return 1;
 			}
 			c1x = mx / (DIM_P + DIM_SP) *(DIM_P + DIM_SP);
 			c1y = my / (DIM_P + DIM_SP) *(DIM_P + DIM_SP)+DIM_SP;
@@ -140,6 +137,7 @@ char Joc::Input()
 				input.y = c1y / (DIM_P + DIM_SP);
 				input.specific = 0;
 				input.tip = PERETE;
+				return 1;
 			}
 			c1x = mx / (DIM_P + DIM_SP)*(DIM_P + DIM_SP) +DIM_SP;
 			c1y = my / (DIM_P + DIM_SP) *(DIM_P + DIM_SP);
@@ -150,14 +148,15 @@ char Joc::Input()
 				input.y = c1y / (DIM_P + DIM_SP);
 				input.specific = 1;
 				input.tip = PERETE;
+				return 1;
 			}
 			return 1;
 		}
 		else 
 			if (ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN)
 			{
-				if(PereteValid())
-					doaction = 1;
+				doaction = 1;
+				return 1;
 			}
 		else
 			if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE)
@@ -170,25 +169,54 @@ char Joc::Input()
 void Joc::Logic()
 {
 	int i;
-	if (input.tip==CASUTA)
+	if (input.tip == CASUTA)
+	{
 		for (i = 0; i < 4; i++)
 			if (input.x + dx[i] == jx && input.y + dy[i] == jy)
 			{
 				input.specific = 1;
 				break;
 			}
+		int m_jx = 2 * jx + 1;
+		int m_jy = 2 * jy + 1;
+		int m_dx = 2 * input.x + 1;
+		int m_dy = 2 * input.y + 1;
+		if (matrice_pereti[(m_jx + m_dx) / 2][(m_jy + m_dy) / 2] != 0)
+			input.specific = 0;
+	}
 
 	if (doaction == 1)
 	{
 		if (input.tip == PERETE)
+		if (PereteValid())
+			{
+				pereti[nrpereti].x = input.x;
+				pereti[nrpereti].y = input.y;
+				pereti[nrpereti].orientare = input.specific;
+				if (pereti[nrpereti].orientare == VERTICAL)
+				{
+					matrice_pereti[2 * input.x][2 * input.y + 3] = M_PERETE;
+					matrice_pereti[2 * input.x][2 * input.y + 1] = M_PERETE;
+				}
+				else
+				{
+					matrice_pereti[2 * input.x+1][2 * input.y] = M_PERETE;
+					matrice_pereti[2 * input.x+3][2 * input.y] = M_PERETE;
+				}
+				nrpereti++;
+			}
+		if (input.tip == CASUTA)
 		{
-			pereti[nrpereti].x = input.x;
-			pereti[nrpereti].y = input.y;
-			pereti[nrpereti].orientare = input.specific;
-			nrpereti++;
-			doaction = 0;
+				if (input.specific)
+				{
+					jx = input.x;
+					jy = input.y;
+				}
+
 		}
+		doaction = 0;
 	}
+	
 }
 
 void Joc::Draw()
@@ -203,7 +231,8 @@ void Joc::Draw()
 	if (input.tip == PERETE)
 		DeseneazaPerete(input.x, input.y, input.specific, 0);
 	else
-		DeseneazaCasuta(input.x, input.y, input.specific);
+		if(!(input.x==jx &&input.y==jy))
+			DeseneazaCasuta(input.x, input.y, input.specific);
 	
 
 	Arata();
