@@ -24,6 +24,9 @@ private:
 	enum {
 		PERETE, CASUTA
 	};
+	enum {
+		VERTICAL, ORIZONTAL
+	};
 	struct InputJucator {
 		int x, y;
 		int specific;
@@ -32,6 +35,13 @@ private:
 	InputJucator input;
 	int dx[4] = { -1,0,1,0 };
 	int dy[4] = { 0,1,0,-1 };
+	struct perete {
+		int x, y;
+		int orientare;
+	};
+	int nrpereti;
+	perete pereti[20];
+	bool  doaction;
 
 public:
 	Joc();
@@ -45,5 +55,6 @@ public:
 	char Input();
 	void Logic();
 	void Draw();
+	bool PereteValid();
 };
 
