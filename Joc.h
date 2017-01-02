@@ -34,7 +34,8 @@ private:
 	};
 	struct InputJucator {
 		int x, y;
-		int specific;
+		int valid;
+		int orientare;
 		int tip;
 	};
 	InputJucator input;
@@ -55,7 +56,7 @@ public:
 	void DeseneazaPion(int x, int y, int pion);
 	void DeseneazaCasuta(int x, int y, int valid);
 	void DeseneazaTabla();
-	void DeseneazaPerete(int x, int y, int orientare, int permanent=0);
+	void DeseneazaPerete(int x, int y, int orientare, int permanent, int valid);
 	void Arata();
 	void Run();
 	char Input();

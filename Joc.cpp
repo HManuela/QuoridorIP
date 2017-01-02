@@ -4,10 +4,12 @@
 
 Joc::Joc()
 {
-	nrjucatori = 2;
+	nrjucatori = 4;
 	tura = 0;
-	jucatori[0] = new Jucator(Jucator::S, Jucator::G);
-	jucatori[1] = new Jucator(Jucator::N, Jucator::M);
+	jucatori[0] = new Jucator(Jucator::S, Jucator::G, 20 / nrjucatori);
+	jucatori[1] = new Jucator(Jucator::N, Jucator::M, 20 / nrjucatori);
+	jucatori[2] = new Jucator(Jucator::E, Jucator::R, 20 / nrjucatori);
+	jucatori[3] = new Jucator(Jucator::V, Jucator::P, 20 / nrjucatori);
 	tabla = al_load_bitmap("tabla.png");
 	display = al_create_display(WIDTH, HEIGHT);
 	pioni = al_load_bitmap("pioni.png");
@@ -21,7 +23,7 @@ Joc::Joc()
 	al_register_event_source(event_queue, al_get_keyboard_event_source());
 	al_register_event_source(event_queue, al_get_mouse_event_source());
 	al_start_timer(timer);
-	
+	input.x = input.y = -1;
 	int i;
 	for (i = 0; i < 20; i++)
 		pereti[i].x = pereti[i].y = -1;
@@ -52,9 +54,9 @@ void Joc::DeseneazaTabla()
 }
 
 
-void Joc::DeseneazaPerete(int x, int y, int orientare, int permanent)
+void Joc::DeseneazaPerete(int x, int y, int orientare, int permanent,int valid)
 {
-	if (x == -1 && y == -1) return;
+	if ((x == -1 && y == -1) || !valid) return;
 	if ( orientare==ORIZONTAL && x >= 8) x = 7;
 	if (orientare==VERTICAL && y >= 8) y = 7;
 	//cout << "desenez" << orientare;
@@ -64,8 +66,8 @@ void Joc::DeseneazaPerete(int x, int y, int orientare, int permanent)
 	al_draw_filled_rectangle(x, y,
 		x + DIM_SP + DIM_P * 2 * orientare, 
 		y + DIM_SP + DIM_P * 2 * (1 - orientare),
-		al_map_rgb(120,120,120));
-		//al_map_rgb(200,160,116));
+		//al_map_rgb(120,120,120));
+		al_map_rgb(200,160,116));
 	else
 		al_draw_filled_rectangle(x, y,
 			x + DIM_SP + DIM_P * 2 * orientare,
@@ -84,9 +86,10 @@ void Joc::Run()
 	Draw();
 	while (!gameOver)
 	{
-		if (Input())
+		bool input_result = Input();
+		Logic();
+		if (input_result)
 		{
-			Logic();
 			Draw();
 		}
 	}
@@ -126,7 +129,7 @@ char Joc::Input()
 				//cout << (mx - DIM_SP) / (DIM_P + DIM_SP) << ' ' << (my - DIM_SP) / (DIM_P + DIM_SP) << '\n';
 				input.x = c1x / (DIM_P + DIM_SP);
 				input.y = c1y / (DIM_P + DIM_SP);
-				input.specific = 0;
+				input.valid = 0;
 				input.tip = CASUTA;
 				return 1;
 			}
@@ -137,7 +140,7 @@ char Joc::Input()
 				//cout << "vertical" << '\n';
 				input.x = c1x / (DIM_P + DIM_SP);
 				input.y = c1y / (DIM_P + DIM_SP);
-				input.specific = 0;
+				input.orientare = VERTICAL;
 				input.tip = PERETE;
 				return 1;
 			}
@@ -148,7 +151,7 @@ char Joc::Input()
 				//cout << "orizontal" << '\n';
 				input.x = c1x / (DIM_P + DIM_SP);
 				input.y = c1y / (DIM_P + DIM_SP);
-				input.specific = 1;
+				input.orientare = ORIZONTAL;
 				input.tip = PERETE;
 				return 1;
 			}
@@ -174,12 +177,17 @@ void Joc::Logic()
 	int jx, jy;
 	jx = jucatori[tura]->x;
 	jy = jucatori[tura]->y;
+
+	if (input.tip == PERETE)
+		input.valid = PereteValid();
+
 	if (input.tip == CASUTA)
 	{
+		//Verific sa nu am pereti in cale
 		for (i = 0; i < 4; i++)
 			if (input.x + dx[i] == jx && input.y + dy[i] == jy)
 			{
-				input.specific = 1;
+				input.valid= 1;
 				break;
 			}
 		int m_jx = 2 * jx + 1;
@@ -187,17 +195,64 @@ void Joc::Logic()
 		int m_dx = 2 * input.x + 1;
 		int m_dy = 2 * input.y + 1;
 		if (matrice_pereti[(m_jx + m_dx) / 2][(m_jy + m_dy) / 2] != 0)
-			input.specific = 0;
+			input.valid = 0;
+		//----------------------------------------
+
+		//verific daca pot face o miscare mai complicata (salt dublu / in laterala)
+		for (i = 0; i < 4; i++)
+		{
+			for (int j = 0; j < nrjucatori; j++)
+			{
+				if (jucatori[tura]->x + dx[i] == jucatori[j]->x &&
+					jucatori[tura]->y + dy[i] == jucatori[j]->y)
+				{
+					if (input.x == jucatori[tura]->x + dx[i] + dx[i] &&
+						input.y == jucatori[tura]->y + dy[i] + dy[i])
+					{
+						if (matrice_pereti[jucatori[tura]->x * 2 + 1 + dx[i]][jucatori[tura]->y * 2 + 1 + dy[i]] == M_LIBER
+							&& matrice_pereti[jucatori[tura]->x * 2 + 1 + dx[i] * 3][jucatori[tura]->y * 2 + 1 + dy[i] * 3] == M_LIBER)
+							if(matrice_pereti[input.x*2+1][input.y*2+1]==M_LIBER)
+								input.valid = 1;
+					}
+				}
+			}
+			for (int j = 0; j < nrjucatori; j++)
+			{
+				if (matrice_pereti[jucatori[tura]->x * 2 + 1 + dx[i]][jucatori[tura]->y * 2 + 1 + dy[i]] == M_LIBER
+					&& matrice_pereti[jucatori[tura]->x * 2 + 1 + dx[i] * 3][jucatori[tura]->y * 2 + 1 + dy[i] * 3] == M_PERETE)
+				{
+					if (jucatori[tura]->x + dx[i] == jucatori[j]->x &&
+						jucatori[tura]->y + dy[i] == jucatori[j]->y)
+					{
+						for (int d = 0; d < 4; d++)
+							if (matrice_pereti[(jucatori[tura]->x + dx[i] + dx[d]) * 2 + 1][(jucatori[tura]->y + dy[i] + dy[d]) * 2 + 1] == M_LIBER &&
+								input.x == jucatori[tura]->x + dx[i] + dx[d] &&
+								input.y == jucatori[tura]->y + dy[i] + dy[d]) //destinatia e libera si cea dorita
+								if (matrice_pereti[(jucatori[tura]->x + dx[i]) * 2 + 1 + dx[d]][(jucatori[tura]->y + dy[i]) * 2 + 1 + dy[d]] == M_LIBER) // daca nu e perete
+									input.valid= 1;
+					}
+				}
+			}
+		}
+
+		for (int j = 0; j < nrjucatori; j++)
+			if (j!=tura && input.x == jucatori[j]->x && input.y == jucatori[j]->y)
+					input.valid = 0;
+
 	}
+
+		
+
 
 	if (doaction == 1)
 	{
 		if (input.tip == PERETE)
-		if (PereteValid())
+		{
+			if (input.valid)
 			{
 				pereti[nrpereti].x = input.x;
 				pereti[nrpereti].y = input.y;
-				pereti[nrpereti].orientare = input.specific;
+				pereti[nrpereti].orientare = input.orientare;
 				if (pereti[nrpereti].orientare == VERTICAL)
 				{
 					matrice_pereti[2 * input.x][2 * input.y + 3] = M_PERETE;
@@ -205,23 +260,35 @@ void Joc::Logic()
 				}
 				else
 				{
-					matrice_pereti[2 * input.x+1][2 * input.y] = M_PERETE;
-					matrice_pereti[2 * input.x+3][2 * input.y] = M_PERETE;
+					matrice_pereti[2 * input.x + 1][2 * input.y] = M_PERETE;
+					matrice_pereti[2 * input.x + 3][2 * input.y] = M_PERETE;
 				}
 				nrpereti++;
+				jucatori[tura]->pereti_ramasi--;
 				tura = (tura + 1) % nrjucatori;
 			}
+		}
 		if (input.tip == CASUTA)
 		{
-				if (input.specific)
-				{
-					jucatori[tura]->x = input.x;
-					jucatori[tura]->y = input.y;
+			if (input.valid)
+			{
+				matrice_pereti[jucatori[tura]->x][jucatori[tura]->y] = M_LIBER;
+				jucatori[tura]->x = input.x;
+				jucatori[tura]->y = input.y;
+				matrice_pereti[jucatori[tura]->x][jucatori[tura]->y] = M_JUCATOR;
+				tura = (tura + 1) % nrjucatori;
+				input.valid = 0;
+			}
 
-					tura = (tura + 1) % nrjucatori;
-					input.specific = 0;
-				}
-
+		}
+		//cout << "este tura lui " << tura << "\n";
+		//verific daca e gata jocul
+		for (int j = 0; j < nrjucatori; j++)
+		{
+			if (jucatori[j]->Castigat())
+			{
+				cout << "A castigat " << j<<'\n';
+			}
 		}
 		doaction = 0;
 	}
@@ -242,10 +309,10 @@ void Joc::Draw()
 		DeseneazaPion(jx, jy, jucatori[i]->pion);
 	}
 	for (i = 0; i < nrpereti; i++)
-		DeseneazaPerete(pereti[i].x, pereti[i].y, pereti[i].orientare, 1);
+		DeseneazaPerete(pereti[i].x, pereti[i].y, pereti[i].orientare, 1, 1);
 
 	if (input.tip == PERETE)
-		DeseneazaPerete(input.x, input.y, input.specific, 0);
+		DeseneazaPerete(input.x, input.y, input.orientare, 0, input.valid);
 	else
 	{
 		bool suprapunere = 0;
@@ -259,7 +326,7 @@ void Joc::Draw()
 		}
 
 		if (!suprapunere)
-			DeseneazaCasuta(input.x, input.y, input.specific);
+			DeseneazaCasuta(input.x, input.y, input.valid);
 	}
 
 	Arata();
@@ -268,10 +335,12 @@ void Joc::Draw()
 bool Joc::PereteValid()
 {
 	int i;
+	if (jucatori[tura]->pereti_ramasi <= 0)
+		return 0;
 	for (i = 0; i < nrpereti; i++)
 	{
-		if (pereti[i].orientare == input.specific)
-			if (input.specific == 0)
+		if (pereti[i].orientare == input.orientare) // peretii sa nu se suprapuna
+			if (input.orientare == VERTICAL)
 			{
 				if (abs(pereti[i].y - input.y) < 2 && input.x == pereti[i].x)
 					return 0;
@@ -282,12 +351,12 @@ bool Joc::PereteValid()
 					return 0;
 			}
 		
-			if (input.specific == 0 && pereti[i].orientare==1)
+		if (input.orientare == VERTICAL && pereti[i].orientare==ORIZONTAL) //sa nu se incruciseze (exista un singur caz de incrucisare - pct de inceput al fiecarui perete sa fie in diagonala)
 			{
 				if (pereti[i].y - input.y == 1 && input.x - pereti[i].x==1)
 					return 0;
 			}
-			if (input.specific == 1 && pereti[i].orientare == 0)
+			if (input.orientare== ORIZONTAL && pereti[i].orientare == VERTICAL)
 			{
 				if (pereti[i].x - input.x == 1 && input.y - pereti[i].y==1)
 					return 0;
