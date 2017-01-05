@@ -5,10 +5,13 @@ private:
 	int finish;
 public:
 	enum {
-		N, S, E, V
+		S, V, E, N
 	};
 	enum {
 		G, P, M, R
+	};
+	enum {
+		SUS, DREAPTA, STANGA, JOS
 	};
 	int x, y;
 	int pereti_ramasi;

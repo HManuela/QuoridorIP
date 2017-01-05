@@ -1,21 +1,51 @@
 #include "Joc.h"
 
+void Joc::Init()
+{
 
+	int nr_pt_pereti = 0;
+
+	for (int i = 0; i < 4; i++)
+		if (set_pion[i] == 0)
+			nr_pt_pereti ++;
+
+	nrjucatori = 0;
+
+	for (int i=0;i<4;i++)
+		if (set_pion[i]==0)
+			jucatori[nrjucatori++]= new Jucator(i, i, 20 / nr_pt_pereti);
+	
+	tura = 0;
+	frame = 0;
+	/*jucatori[0] = new Jucator(Jucator::S, Jucator::G, 20 / nrjucatori);
+	jucatori[1] = new Jucator(Jucator::N, Jucator::R, 20 / nrjucatori);
+	jucatori[2] = new Jucator(Jucator::E, Jucator::M, 20 / nrjucatori);
+	jucatori[3] = new Jucator(Jucator::V, Jucator::P, 20 / nrjucatori);*/
+	for (int i = 0; i < 20; i++)
+		pereti[i].x = pereti[i].y = -1;
+	nrpereti = 0;
+
+	input.x = input.y = -1;
+	doaction = 0;
+	gameOver = false;
+}
 
 Joc::Joc()
 {
-	nrjucatori = 4;
-	tura = 0;
-	jucatori[0] = new Jucator(Jucator::S, Jucator::G, 20 / nrjucatori);
-	jucatori[1] = new Jucator(Jucator::N, Jucator::M, 20 / nrjucatori);
-	jucatori[2] = new Jucator(Jucator::E, Jucator::R, 20 / nrjucatori);
-	jucatori[3] = new Jucator(Jucator::V, Jucator::P, 20 / nrjucatori);
-	tabla = al_load_bitmap("tabla.png");
 	display = al_create_display(WIDTH, HEIGHT);
+
+	meniu = al_load_bitmap("meniu.png");
+	tabla = al_load_bitmap("tabla.png");
+	sel_pioni = al_load_bitmap("sel_pioni.png");
+	jucatori_png = al_load_bitmap("jucatori.png");
+	al_convert_mask_to_alpha(jucatori_png, al_map_rgb(255, 0, 255));
 	pioni = al_load_bitmap("pioni.png");
+	al_convert_mask_to_alpha(pioni, al_map_rgb(176, 71, 44));
 	mutari = al_load_bitmap("moves.png");
 
-	gameOver = false;
+	font_left = al_load_font("arial.ttf", 15, ALLEGRO_ALIGN_LEFT);
+	font_right= al_load_font("arial.ttf", 15, ALLEGRO_ALIGN_RIGHT);
+
 	timer = al_create_timer(1.0 / 20);
 	event_queue = al_create_event_queue();
 	al_register_event_source(event_queue, al_get_display_event_source(display));
@@ -23,13 +53,11 @@ Joc::Joc()
 	al_register_event_source(event_queue, al_get_keyboard_event_source());
 	al_register_event_source(event_queue, al_get_mouse_event_source());
 	al_start_timer(timer);
-	input.x = input.y = -1;
-	int i;
-	for (i = 0; i < 20; i++)
-		pereti[i].x = pereti[i].y = -1;
-	nrpereti = 0;
-	doaction = 0;
 
+	input.x = input.y = -1;
+	doaction = 0;
+	gameOver = false;
+	stare = MENIU;
 }
 
 
@@ -39,9 +67,15 @@ Joc::~Joc()
 
 void Joc::DeseneazaPion(int x, int y, int pion) // deseneaza pionul in casuta x, y
 {
+	if (pion == tura)
+		al_draw_circle(DIM_SP + (DIM_P + DIM_SP)*x + 5 + 15, DIM_SP + (DIM_P + DIM_SP)*y + 5 + 15, 20, al_map_rgb(200, 160, 116), 2);
 	al_draw_bitmap_region(pioni, pion * 30, 0, 30, 30, DIM_SP + (DIM_P + DIM_SP)*x + 5, DIM_SP + (DIM_P + DIM_SP)*y + 5, 0);
 }
 
+void Joc::DeseneazaJucator(int x, int y, int jucator)
+{
+	al_draw_bitmap_region(jucatori_png, jucator * 30, 0, 30, 30, DIM_SP + (DIM_P + DIM_SP)*x + 5, DIM_SP + (DIM_P + DIM_SP)*y + 5, 0);
+}
 void Joc::DeseneazaCasuta(int x, int y, int valid)
 {
 	//valid = valid - 2;
@@ -53,6 +87,15 @@ void Joc::DeseneazaTabla()
 	al_draw_bitmap(tabla, 0, 0, 0);
 }
 
+void Joc::DeseneazaMeniu()
+{
+	al_draw_bitmap(meniu, 0, 0, 0);
+}
+
+void Joc::DeseneazaPregame()
+{
+	al_draw_bitmap(sel_pioni, 0, 0, 0);
+}
 
 void Joc::DeseneazaPerete(int x, int y, int orientare, int permanent,int valid)
 {
@@ -62,12 +105,25 @@ void Joc::DeseneazaPerete(int x, int y, int orientare, int permanent,int valid)
 	//cout << "desenez" << orientare;
 	x = (DIM_P+DIM_SP)*x + DIM_SP*orientare;
 	y = (DIM_P+DIM_SP)*y + DIM_SP*(1 - orientare);
+
 	if (!permanent)
-	al_draw_filled_rectangle(x, y,
-		x + DIM_SP + DIM_P * 2 * orientare, 
-		y + DIM_SP + DIM_P * 2 * (1 - orientare),
-		//al_map_rgb(120,120,120));
-		al_map_rgb(200,160,116));
+	{
+		char text_pereti[20]; 
+		sprintf_s(text_pereti, "Pereti ramasi:%d", jucatori[tura]->pereti_ramasi);
+		if (input.x>=6 && orientare==VERTICAL)
+			al_draw_text(font_right, al_map_rgb(250, 200, 150), x - 100, y + 10, 0, text_pereti);
+		else
+			if (orientare==ORIZONTAL)
+				al_draw_text(font_left, al_map_rgb(250, 200, 150), x - 5, y + 10, 0, text_pereti);
+			else
+				al_draw_text(font_left, al_map_rgb(250, 200, 150), x + 10, y + 10, 0, text_pereti);
+
+		al_draw_filled_rectangle(x, y,
+			x + DIM_SP + DIM_P * 2 * orientare,
+			y + DIM_SP + DIM_P * 2 * (1 - orientare),
+			//al_map_rgb(120,120,120));
+			al_map_rgb(200, 160, 116));
+	}
 	else
 		al_draw_filled_rectangle(x, y,
 			x + DIM_SP + DIM_P * 2 * orientare,
@@ -83,14 +139,58 @@ void Joc::Arata()
 
 void Joc::Run()
 {
-	Draw();
-	while (!gameOver)
+	while (stare!=EXIT)
 	{
-		bool input_result = Input();
-		Logic();
-		if (input_result)
+		if (stare == MENIU)
 		{
+			Draw_Meniu();
+			gameOver = 0;
+			while (stare == MENIU && !gameOver)
+			{
+				bool input_result = Input();
+				Logic_Meniu();
+				if (input_result)
+				{
+					Draw_Meniu();
+					
+				}
+			}
+			if (gameOver)
+				break;
+		}
+
+		if (stare == PREGAME)
+		{
+			Draw_Pregame();
+			gameOver = 0;
+			while (stare == PREGAME && !gameOver)
+			{
+				bool input_result = Input();
+				Logic_Pregame();
+				if (input_result)
+				{
+					Draw_Pregame();
+
+				}
+			}
+		
+
+		}
+
+		if (stare == JOC)
+		{
+			Init();
 			Draw();
+			gameOver = 0;
+			while (!gameOver)
+			{
+				bool input_result = Input();
+				Logic();
+				if (input_result)
+				{
+					Draw();
+				}
+			}
 		}
 	}
 }
@@ -108,6 +208,7 @@ char Joc::Input()
 		switch (ev.keyboard.keycode) {
 		case ALLEGRO_KEY_ESCAPE:
 			gameOver = true;
+			stare = MENIU;
 			break;
 		}
 		return 1;
@@ -165,7 +266,8 @@ char Joc::Input()
 			}
 		else
 			if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE)
-				gameOver = true;
+				gameOver = true,
+				stare=EXIT;
 
 	return 0;
 	
@@ -363,4 +465,80 @@ bool Joc::PereteValid()
 			}
 	}
 	return 1;
+}
+void Joc::Draw_Meniu()
+{
+	DeseneazaMeniu();
+	Arata();
+}
+
+void Joc::Logic_Meniu()
+{
+	//cout << input.x << ' ' << input.y << '\n';
+	if (doaction == 1)
+	{
+		if (input.y == 3 && input.x >= 3 && input.x <= 5)
+		{
+			//play
+			stare = PREGAME;
+		}
+		if (input.y == 4 && input.x >= 3 && input.x <= 5)
+		{
+			//help
+		}
+		if (input.y == 5 && input.x >= 3 && input.x <= 5)
+		{
+			stare = EXIT;
+		}
+		doaction = 0;
+	}
+}
+
+void Joc::Draw_Pregame()
+{
+	DeseneazaPregame();
+	DeseneazaJucator(2, 4, set_pion[Jucator::STANGA]);
+	DeseneazaJucator(6, 4, set_pion[Jucator::DREAPTA]);
+	DeseneazaJucator(4, 2, set_pion[Jucator::SUS]);
+	DeseneazaJucator(4, 6, set_pion[Jucator::JOS]);
+	Arata();
+}
+
+void Joc::Logic_Pregame()
+{
+	//cout << input.x << ' ' << input.y << '\n';
+	if (doaction == 1)
+	{
+		if (input.y == 4 && input.x == 4 )
+		{
+			//play
+			stare = JOC;
+		}
+		if (input.y == 1 && input.x == 4 ) // galben sus 
+			set_pion[Jucator::G] = (set_pion[Jucator::G] + 1) % 3;
+	
+		if (input.y == 3 && input.x == 4 ) // galben jos
+			set_pion[Jucator::G] = (set_pion[Jucator::G] + 2) % 3;
+		
+		if (input.y == 5 && input.x == 4 ) //rosu sus 
+			set_pion[Jucator::R] = (set_pion[Jucator::R] + 1) % 3;
+		
+		if (input.y == 7 && input.x == 4 ) // rosu jos 
+			set_pion[Jucator::R] = (set_pion[Jucator::R] + 2) % 3;
+		
+		if (input.y == 4 && input.x == 1 ) // maro stanga 
+			set_pion[Jucator::M] = (set_pion[Jucator::M] + 1) % 3;
+		
+		if (input.y == 4 && input.x == 3 ) // maro dreapta
+			set_pion[Jucator::M] = (set_pion[Jucator::M] + 2) % 3;
+		
+		if (input.y == 4 && input.x == 5 ) // portocaliu stanga
+			set_pion[Jucator::P] = (set_pion[Jucator::P] + 1) % 3;
+		
+		if (input.y == 4 && input.x == 7 ) // portocaliu dreapta
+			set_pion[Jucator::P] = (set_pion[Jucator::P] + 2) % 3;
+	
+		doaction = 0;
+	}
+	
 }

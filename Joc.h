@@ -3,6 +3,8 @@
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_image.h>
 #include <allegro5/allegro_primitives.h>
+#include <allegro5/allegro_font.h>
+#include <allegro5/allegro_ttf.h>
 #include <iostream>
 using namespace std;
 
@@ -13,16 +15,22 @@ using namespace std;
 class Joc
 {
 private:
+	ALLEGRO_FONT * font_left;
+	ALLEGRO_FONT * font_right;
 	ALLEGRO_DISPLAY* display;
 	ALLEGRO_BITMAP * tabla;
 	ALLEGRO_BITMAP * pioni;
 	ALLEGRO_BITMAP * mutari;
+	ALLEGRO_BITMAP * meniu;
+	ALLEGRO_BITMAP *sel_pioni;
+	ALLEGRO_BITMAP *jucatori_png;
 	bool gameOver;
 	ALLEGRO_EVENT_QUEUE *event_queue;
 	ALLEGRO_TIMER * timer;
 	int tura;
 	Jucator* jucatori[4];
 	int nrjucatori;
+	int frame;
 	enum {
 		PERETE, CASUTA
 	};
@@ -31,6 +39,14 @@ private:
 	};
 	enum {
 		M_LIBER, M_PERETE, M_JUCATOR
+	};
+	enum {
+		JOC, MENIU, EXIT, PREGAME
+	};
+	int stare;
+	int set_pion[4];
+	enum {
+		JUCATOR, CALCULATOR, LIBER
 	};
 	struct InputJucator {
 		int x, y;
@@ -51,11 +67,16 @@ private:
 	int matrice_pereti[20][20];
 
 public:
+	void Init();
 	Joc();
 	~Joc();
 	void DeseneazaPion(int x, int y, int pion);
+	void DeseneazaJucator(int x, int y, int jucator);
 	void DeseneazaCasuta(int x, int y, int valid);
 	void DeseneazaTabla();
+	void DeseneazaMeniu();
+	void DeseneazaPregame();
+	void DeseneazaPerete();
 	void DeseneazaPerete(int x, int y, int orientare, int permanent, int valid);
 	void Arata();
 	void Run();
@@ -63,5 +84,9 @@ public:
 	void Logic();
 	void Draw();
 	bool PereteValid();
+	void Draw_Meniu();
+	void Logic_Meniu();
+	void Draw_Pregame();
+	void Logic_Pregame();
 };
 
