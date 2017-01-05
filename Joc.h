@@ -54,6 +54,9 @@ private:
 		int orientare;
 		int tip;
 	};
+	struct punct {
+		int x, y;
+	};
 	InputJucator input;
 	int dx[4] = { -1,0,1,0 };
 	int dy[4] = { 0,1,0,-1 };
@@ -76,14 +79,17 @@ public:
 	void DeseneazaTabla();
 	void DeseneazaMeniu();
 	void DeseneazaPregame();
-	void DeseneazaPerete();
 	void DeseneazaPerete(int x, int y, int orientare, int permanent, int valid);
 	void Arata();
 	void Run();
 	char Input();
+	int DistantaFinish(int jx, int jy, int fx, int fy);
+	bool MiscareValida(int jx, int jy, int destx, int desty);
+	bool PereteValid(int pereti_ramasi, int x, int y, int orientare);
+	void PunePerete(int x, int y, int orientare);
+	void ScoatePerete(int x, int y, int orientare);
 	void Logic();
 	void Draw();
-	bool PereteValid();
 	void Draw_Meniu();
 	void Logic_Meniu();
 	void Draw_Pregame();
