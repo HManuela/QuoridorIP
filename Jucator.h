@@ -1,4 +1,7 @@
 #pragma once
+#include<iostream>
+using namespace std;
+
 class Jucator
 {
 private:
@@ -17,9 +20,14 @@ public:
 	int pereti_ramasi;
 	int pion;
 	int finish;
+
+	int tip;
+
 	Jucator();
-	Jucator(int fin, int culoare, int pereti_ram);
+	Jucator(int fin, int culoare, int pereti_ram, int Tip);
 	bool Castigat();
 	~Jucator();
+	char nume_culoare[15];
+	
 };
 

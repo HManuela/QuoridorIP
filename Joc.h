@@ -15,15 +15,16 @@ using namespace std;
 class Joc
 {
 private:
-	ALLEGRO_FONT * font_left;
-	ALLEGRO_FONT * font_right;
+	ALLEGRO_FONT * font;
+	ALLEGRO_FONT * font_mare;
 	ALLEGRO_DISPLAY* display;
 	ALLEGRO_BITMAP * tabla;
 	ALLEGRO_BITMAP * pioni;
 	ALLEGRO_BITMAP * mutari;
 	ALLEGRO_BITMAP * meniu;
-	ALLEGRO_BITMAP *sel_pioni;
-	ALLEGRO_BITMAP *jucatori_png;
+	ALLEGRO_BITMAP * sel_pioni;
+	ALLEGRO_BITMAP * jucatori_png;
+	ALLEGRO_BITMAP * help;
 	bool gameOver;
 	ALLEGRO_EVENT_QUEUE *event_queue;
 	ALLEGRO_TIMER * timer;
@@ -41,11 +42,11 @@ private:
 		M_LIBER, M_PERETE, M_JUCATOR
 	};
 	enum {
-		JOC, MENIU, EXIT, PREGAME
+		JOC, MENIU, EXIT, PREGAME, HELP
 	};
 	int stare;
 	int set_pion[4];
-	enum {
+	enum TipJucator{
 		JUCATOR, CALCULATOR, LIBER
 	};
 	struct InputJucator {
@@ -79,12 +80,14 @@ public:
 	void DeseneazaTabla();
 	void DeseneazaMeniu();
 	void DeseneazaPregame();
+	void DeseneazaHelp();
 	void DeseneazaPerete(int x, int y, int orientare, int permanent, int valid);
 	void Arata();
 	void Run();
 	char Input();
 	int DistantaFinish(int jx, int jy, int fx, int fy);
 	bool MiscareValida(int jx, int jy, int destx, int desty);
+	int TesteazaPerete(int x, int y, int orientare);
 	bool PereteValid(int pereti_ramasi, int x, int y, int orientare);
 	void PunePerete(int x, int y, int orientare);
 	void ScoatePerete(int x, int y, int orientare);
@@ -93,6 +96,11 @@ public:
 	void Draw_Meniu();
 	void Logic_Meniu();
 	void Draw_Pregame();
+	void Draw_Help();
 	void Logic_Pregame();
+	void MiscareCalculator();
+	bool PereteCalculator();
+	int DistantaFinishJ(int Tura);
+	void Calculator();
 };
 

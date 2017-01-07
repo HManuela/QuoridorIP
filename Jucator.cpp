@@ -9,8 +9,9 @@ Jucator::Jucator()
 	pion = G;
 }
 
-Jucator::Jucator(int fin, int culoare, int pereti_ram)
+Jucator::Jucator(int fin, int culoare, int pereti_ram, int Tip)
 {
+	tip = Tip;
 	pereti_ramasi = pereti_ram;
 	finish = fin;
 	if (fin == S)
@@ -39,6 +40,15 @@ Jucator::Jucator(int fin, int culoare, int pereti_ram)
 
 
 	pion = culoare;
+	if(culoare==R)
+		sprintf_s(nume_culoare, "Rosu");
+	if(culoare==M)
+		sprintf_s(nume_culoare, "Maro");
+	if (culoare == P)
+		sprintf_s(nume_culoare, "Portocaliu");
+	if (culoare == G)
+		sprintf_s(nume_culoare, "Galben");
+
 }
 
 bool Jucator::Castigat()
