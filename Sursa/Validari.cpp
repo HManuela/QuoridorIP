@@ -149,15 +149,21 @@ int Joc::TesteazaPerete(int x, int y, int orientare)
 		int rez = DistantaFinish(jucatori[i]->x, jucatori[i]->y, fx, fy);
 		if (rez < rezultat && tura!=i)
 			rezultat = rez;
+		if (rez < rezultat && tura == i)
+			rezultat = 1;
 		if (rez == 100)
 		{
 			ScoatePerete(x, y, orientare);
+			if (DEBUG == 1) cout << "fail la testul de drum\n";
 			return 0;
 		}
 	}
 	ScoatePerete(x, y, orientare);
 	if (rezultat == 100)
+	{
+		if (DEBUG == 1) cout << "fail la testul de drum\n";
 		rezultat = 0;
+	}
 	return rezultat;
 }
 
@@ -165,30 +171,46 @@ bool Joc::PereteValid(int pereti_ramasi, int x, int y, int orientare)
 {
 	int i;
 	if (pereti_ramasi <= 0)
+	{
+		cout << "nu mai am pereti\n";
 		return 0;
+	}
 	for (i = 0; i < nrpereti; i++)
 	{
 		if (pereti[i].orientare == orientare) // peretii sa nu se suprapuna
 			if (orientare == VERTICAL)
 			{
 				if (abs(pereti[i].y - y) < 2 && x == pereti[i].x)
+				{
+					if (DEBUG==1)	cout << "peretele s-ar suprapune cu altul pe verticala\n";
 					return 0;
+				}
 			}
 			else
 			{
 				if (abs(pereti[i].x - x) < 2 && y == pereti[i].y)
+				{
+					if (DEBUG==1)	cout << "peretele s-ar suprapune cu altul pe orizontala\n";
 					return 0;
+				}
+					
 			}
 
 		if (orientare == VERTICAL && pereti[i].orientare == ORIZONTAL) //sa nu se incruciseze (exista un singur caz de incrucisare - pct de inceput al fiecarui perete sa fie in diagonala)
 		{
 			if (pereti[i].y - y == 1 && x - pereti[i].x == 1)
+			{
+				if (DEBUG==1) cout << "peretele s-ar incrucisa cu un perete orizontal\n";
 				return 0;
+			}
 		}
 		if (orientare == ORIZONTAL && pereti[i].orientare == VERTICAL)
 		{
 			if (pereti[i].x - x == 1 && y - pereti[i].y == 1)
+			{
+				if (DEBUG==1) cout << "peretele s-ar incrucisa cu un perete vertical\n";
 				return 0;
+			}
 		}
 	}
 	return TesteazaPerete(x, y, orientare);

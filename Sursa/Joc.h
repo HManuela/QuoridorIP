@@ -8,6 +8,8 @@
 #include <iostream>
 using namespace std;
 
+#define DEBUG 0
+
 #define DIM_P 40
 #define DIM_SP 10 
 #define WIDTH 460

@@ -52,6 +52,12 @@ Joc::Joc()
 	al_register_event_source(event_queue, al_get_mouse_event_source());
 	al_start_timer(timer);
 
+	set_pion[0] = JUCATOR;
+	set_pion[2] = LIBER;
+	set_pion[3] = CALCULATOR;
+	set_pion[1] = LIBER;
+
+
 	input.x = input.y = -1;
 	doaction = 0;
 	gameOver = false;
@@ -131,6 +137,7 @@ void Joc::Run()
 						Draw();
 				}
 			}
+			stare = MENIU;
 		}
 	}
 }
@@ -180,21 +187,23 @@ void Joc::MiscareCalculator()
 	int jy = jucatori[tura]->y;
 	int rezultat = 100;
 	int rdx, rdy;
+	int fx, fy;
+
+	if (jucatori[tura]->finish == Jucator::N)
+		fx = -1, fy = 0;
+	if (jucatori[tura]->finish == Jucator::S)
+		fx = -1, fy = 8;
+	if (jucatori[tura]->finish == Jucator::E)
+		fx = 8, fy = -1;
+	if (jucatori[tura]->finish == Jucator::V)
+		fx = 0, fy = -1;
+
 	for (int i = 0; i < 4; i++)
 	{
 		if (MiscareValida(jx, jy, jx + diagx[i], jy + diagy[i]))
 		{
-			int fx, fy;
-			if (jucatori[tura]->finish == Jucator::N)
-				fx = -1, fy = 0;
-			if (jucatori[tura]->finish == Jucator::S)
-				fx = -1, fy = 8;
-			if (jucatori[tura]->finish == Jucator::E)
-				fx = 8, fy = -1;
-			if (jucatori[tura]->finish == Jucator::V)
-				fx = 0, fy = -1;
 			int rez = DistantaFinish(jucatori[tura]->x + diagx[i], jucatori[tura]->y + diagy[i], fx, fy);
-			if (rez < rezultat)
+			if (rez <= rezultat)
 			{
 				rezultat = rez;
 				rdx = diagx[i];
@@ -203,17 +212,8 @@ void Joc::MiscareCalculator()
 		}
 		if (MiscareValida(jx, jy, jx + dx[i], jy + dy[i]))
 		{
-			int fx, fy;
-			if (jucatori[tura]->finish == Jucator::N)
-				fx = -1, fy = 0;
-			if (jucatori[tura]->finish == Jucator::S)
-				fx = -1, fy = 8;
-			if (jucatori[tura]->finish == Jucator::E)
-				fx = 8, fy = -1;
-			if (jucatori[tura]->finish == Jucator::V)
-				fx = 0, fy = -1;
 			int rez = DistantaFinish(jucatori[tura]->x + dx[i], jucatori[tura]->y + dy[i], fx, fy);
-			if (rez < rezultat)
+			if (rez <= rezultat)
 			{
 				rezultat = rez;
 				rdx = dx[i];
@@ -222,17 +222,8 @@ void Joc::MiscareCalculator()
 		}
 		if (MiscareValida(jx, jy, jx + dx[i] * 2, jy + dy[i] * 2))
 		{
-			int fx, fy;
-			if (jucatori[tura]->finish == Jucator::N)
-				fx = -1, fy = 0;
-			if (jucatori[tura]->finish == Jucator::S)
-				fx = -1, fy = 8;
-			if (jucatori[tura]->finish == Jucator::E)
-				fx = 8, fy = -1;
-			if (jucatori[tura]->finish == Jucator::V)
-				fx = 0, fy = -1;
 			int rez = DistantaFinish(jucatori[tura]->x + dx[i] * 2, jucatori[tura]->y + dy[i] * 2, fx, fy);
-			if (rez < rezultat)
+			if (rez <= rezultat)
 			{
 				rezultat = rez;
 				rdx = dx[i] * 2;
@@ -241,6 +232,8 @@ void Joc::MiscareCalculator()
 		}
 
 	}
+	if (DEBUG)
+		cout << jx + rdx << ' ' << jy + rdy<<' '<<rezultat<<'\n';
 
 	jucatori[tura]->x = jx + rdx;
 	jucatori[tura]->y = jy + rdy;
@@ -249,24 +242,32 @@ void Joc::MiscareCalculator()
 
 bool Joc::PereteCalculator()
 {
-	int bestx, besty, besto, raul_cel_mai_mare = 0;// vrem sa marim cat de mult putem cel mai scurt drum pentru ceilalti jucatori
+	int bestx=0, besty=0, besto=0, raul_cel_mai_mare = 0;// vrem sa marim cat de mult putem cel mai scurt drum pentru ceilalti jucatori
 	for (int x = 0; x < 8; x++)
 		for (int y = 0; y < 8; y++)
 			for (int orientare = VERTICAL; orientare <= ORIZONTAL; orientare++)
 				if (PereteValid(jucatori[tura]->pereti_ramasi,x,y,orientare))
 				{
-					int rezt = TesteazaPerete(x, y, orientare);
-					
-					if (raul_cel_mai_mare < rezt)
+					int rezt = 0; //TesteazaPerete(x, y, orientare);
+					for (int i = 0; i < nrjucatori; i++)
 					{
-						cout << "rezt:" << rezt << "\n";
-						raul_cel_mai_mare = rezt;
-						bestx = x;
-						besty = y;
-						besto = orientare;
+						if (i == tura) i++;
+						if (i >= nrjucatori) break;
+						PunePerete(x, y, orientare);
+						rezt = DistantaFinishJ(i);
+						ScoatePerete(x, y, orientare);
+
+						if (raul_cel_mai_mare < rezt)
+						{
+							//cout << "rezt:" << rezt << "\n";
+							raul_cel_mai_mare = rezt;
+							bestx = x;
+							besty = y;
+							besto = orientare;
+						}
 					}
 				}
-	if (bestx == 0 && besty == 0 && besto == 0)
+	if (bestx == 0 && besty == 0)
 		return 0;
 	PunePerete(bestx, besty, besto);
 	jucatori[tura]->pereti_ramasi--;
@@ -294,14 +295,21 @@ void Joc::Calculator()
 	if (jucatori[tura]->pereti_ramasi > 0)
 	{
 		int mindist = DistantaFinishJ(tura);
-		cout << "calculator:" << mindist << ' ';
+		if (DEBUG)
+			cout << "calculator:" << mindist << ' ';
 		for (int i = 0; i < nrjucatori; i++)
 		{
-			int dist = DistantaFinishJ(i);
-			cout << "jucator" << i << " " << dist << ' ';
-			if (dist < mindist)
+			if (i == tura)
+				i++;
+			if (i >= nrjucatori) break;
+
+			int dist = DistantaFinishJ(i)-1;
+			if(DEBUG)
+				cout << "jucator" << i << " " << dist << ' ';
+			if (dist <= mindist)
 			{
-				cout << '\n';
+				if (DEBUG)
+					cout << '\n';
 				if (PereteCalculator())
 				{
 					tura = (tura + 1) % nrjucatori;
@@ -309,8 +317,10 @@ void Joc::Calculator()
 				}
 			}
 		}
-		cout << '\n';
+		//cout << '\n';
 	}
+	if (DEBUG)
+		cout << "calculatorul a decis ca e mai bine sa se miste: ";
 	MiscareCalculator();
 	tura = (tura + 1) % nrjucatori;
 }
